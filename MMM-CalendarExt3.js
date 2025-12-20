@@ -493,11 +493,15 @@ Module.register("MMM-CalendarExt3", {
         weatherDom.append(icon)
         const maxTemp = document.createElement("span")
         maxTemp.classList.add("maxTemp", "temperature")
-        maxTemp.innerHTML = Math.round(forecasted.maxTemperature)
+        maxTemp.innerHTML = forecasted.maxTemperature != null
+          ? Math.round(forecasted.maxTemperature)
+          : "--"
         weatherDom.append(maxTemp)
         const minTemp = document.createElement("span")
         minTemp.classList.add("minTemp", "temperature")
-        minTemp.innerHTML = Math.round(forecasted.minTemperature)
+        minTemp.innerHTML = forecasted.minTemperature != null
+          ? Math.round(forecasted.minTemperature)
+          : "--"
         weatherDom.append(minTemp)
         h.append(weatherDom)
       }
