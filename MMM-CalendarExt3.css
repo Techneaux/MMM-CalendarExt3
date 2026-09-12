@@ -37,7 +37,7 @@ selector-pseudo-class-no-unknown, keyframes-name-pattern,
   padding: 0 5px;
   height: calc(
     var(--cellheaderheight) + var(--cellfooterheight) +
-      calc(var(--eventheight) * var(--maxeventlines))
+      calc(var(--eventheight) * var(--weekeventlines, var(--maxeventlines)))
   );
   position: relative;
 }
@@ -51,19 +51,18 @@ selector-pseudo-class-no-unknown, keyframes-name-pattern,
 
 .CX3 .weekGridRow {
   grid-template-rows: repeat(
-    var(--maxeventlines),
+    var(--weekeventlines, var(--maxeventlines)),
     [event-start] minmax(0, 1fr) [event-end]
   );
   grid-auto-rows: 0;
   overflow-y: hidden;
-  grid-auto-flow: column dense;
 }
 
 .CX3 .cellContainer {
   width: 100%;
   height: calc(
     var(--cellheaderheight) + var(--cellfooterheight) +
-      calc(var(--eventheight) * var(--maxeventlines))
+      calc(var(--eventheight) * var(--weekeventlines, var(--maxeventlines)))
   );
   position: absolute;
   top: 0;
@@ -76,7 +75,7 @@ selector-pseudo-class-no-unknown, keyframes-name-pattern,
   bottom: var(--cellfooterheight);
   left: 0;
   width: 100%;
-  height: calc(var(--eventheight) * var(--maxeventlines));
+  height: calc(var(--eventheight) * var(--weekeventlines, var(--maxeventlines)));
 }
 
 .CX3 .cell {
@@ -84,7 +83,7 @@ selector-pseudo-class-no-unknown, keyframes-name-pattern,
   background-color: var(--cellbgcolor);
   height: calc(
     var(--cellheaderheight) + var(--cellfooterheight) +
-      calc(var(--eventheight) * var(--maxeventlines))
+      calc(var(--eventheight) * var(--weekeventlines, var(--maxeventlines)))
   );
   position: relative;
 }
@@ -104,7 +103,7 @@ selector-pseudo-class-no-unknown, keyframes-name-pattern,
   border-radius: 9px;
   background-color: white;
   z-index: 30;
-  text-overflow: "+";
+  text-align: center;
   line-height: 18px;
 }
 
@@ -125,7 +124,7 @@ selector-pseudo-class-no-unknown, keyframes-name-pattern,
 }
 
 .CX3 .cellBody {
-  height: calc(var(--eventheight) * var(--maxeventlines));
+  height: calc(var(--eventheight) * var(--weekeventlines, var(--maxeventlines)));
 }
 
 .CX3 .cw {
@@ -216,6 +215,7 @@ selector-pseudo-class-no-unknown, keyframes-name-pattern,
   white-space: nowrap;
   text-overflow: unset;
   position: relative;
+  contain: layout style;
 }
 
 .CX3 .event .headline .title.marquee .marqueeText {
@@ -226,32 +226,28 @@ selector-pseudo-class-no-unknown, keyframes-name-pattern,
   min-width: 0;
 }
 
+/* Pause marquee animation when hidden */
+.CX3.hidden .event .headline .title.marquee .marqueeText,
+.CX3[style*="display: none"] .event .headline .title.marquee .marqueeText,
+.CX3[style*="visibility: hidden"] .event .headline .title.marquee .marqueeText {
+  animation-play-state: paused;
+}
+
 @keyframes marquee {
   0% {
-    transform: translateX(0);
-    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 
   49.999% {
-    transform: translateX(calc(var(--marqueeScroll) * -1));
-    opacity: 1;
-    visibility: hidden;
+    transform: translate3d(calc(var(--marqueeScroll) * -1), 0, 0);
   }
 
   50% {
-    opacity: 0;
-    visibility: hidden;
-  }
-
-  50.001% {
-    transform: translateX(var(--marqueeOffset));
-    opacity: 1;
-    visibility: visible;
+    transform: translate3d(var(--marqueeOffset), 0, 0);
   }
 
   60% {
-    opacity: 1;
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 
   100% {

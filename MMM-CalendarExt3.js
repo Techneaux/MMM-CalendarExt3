@@ -1,5 +1,4 @@
 /* global Log, Module, config */
-/* eslint-disable no-unused-vars */
 
 const popoverSupported = Object.prototype.hasOwnProperty.call(HTMLElement.prototype, "popover")
 /*
@@ -14,6 +13,7 @@ if (!popoverSupported) console.info("This browser doesn't support popover yet. U
 const animationSupported = (typeof window !== "undefined" && window?.mmVersion) ? +(window.mmVersion.split(".").join("")) >= 2250 : false
 
 Module.register("MMM-CalendarExt3", {
+  requiresVersion: "2.36.0",
   defaults: {
     mode: "week", // or 'month', 'day'
     weekIndex: -1, // Which week from this week starts in a view. Ignored on mode 'month'
@@ -39,11 +39,12 @@ Module.register("MMM-CalendarExt3", {
     },
     calendarSet: [],
     maxEventLines: 5, // How many events will be shown in a day cell.
+    dynamicWeekHeight: false, // If true, each week row shrinks to the actually used event lines.
     // It could be possible to use {} like {"4": 6, "5": 5, "6": 4} to set different lines by the number of the week of the month.
     // Also, it could be possible to use [] like [8, 8, 7, 6, 5] to set different lines by the number of week of the month.
     fontSize: "18px",
     eventHeight: "22px",
-    eventFilter: ev => { return true },
+    eventFilter: () => { return true },
     eventSorter: null,
     eventTransformer: ev => { return ev },
     refreshInterval: 1000 * 60 * 10, // too frequent refresh. 10 minutes is enough.
@@ -55,7 +56,7 @@ Module.register("MMM-CalendarExt3", {
     useWeather: true,
     weatherLocationName: null,
     // notification: 'CALENDAR_EVENTS', /* reserved */
-    manipulateDateCell: (cellDom, events) => { },
+    manipulateDateCell: () => { },
     weatherNotification: "WEATHER_UPDATED",
     weatherPayload: payload => { return payload },
     eventNotification: "CALENDAR_EVENTS",
@@ -86,7 +87,7 @@ Module.register("MMM-CalendarExt3", {
     customHeader: false // true or function
   },
 
-  defaulNotifications: {
+  defaultNotifications: {
     weatherNotification: "WEATHER_UPDATED",
     weatherPayload: payload => { return payload },
     eventNotification: "CALENDAR_EVENTS",
@@ -98,6 +99,46 @@ Module.register("MMM-CalendarExt3", {
     return css
   },
 
+  socketNotificationReceived(notification, payload) {
+    if (notification !== "CX3_FUNCTIONS_RESTORED") return
+    if (payload.identifier !== this.identifier) return
+
+    const configKeys = ["preProcessor", "eventTransformer", "eventFilter", "eventSorter", "manipulateDateCell", "customHeader"]
+    const notificationKeys = ["eventPayload", "weatherPayload"]
+    const preamble = payload.variablePreamble || ""
+
+    for (const key of [...configKeys, ...notificationKeys]) {
+      if (!payload.functions[key]) continue
+      try {
+        // Create a function factory that first evaluates the variable preamble
+        // (declaring all variables in its scope), then returns the callback function.
+        // The callback function now has access to those variables through closure.
+        const fnFactory = new Function(preamble + "\nreturn " + payload.functions[key])
+        const fn = fnFactory()
+
+        if (typeof fn !== "function") continue
+        if (configKeys.includes(key)) {
+          this.activeConfig[key] = fn
+          this.originalConfig[key] = fn
+        }
+        if (notificationKeys.includes(key)) {
+          this.notifications[key] = fn
+        }
+      } catch (error) {
+        Log.warn(`[CX3] Could not restore config function "${key}":`, error.message)
+      }
+    }
+
+    this._functionsReady()
+
+    // If the module already rendered (e.g. Chrome opened after initial load),
+    // re-render immediately so transforms/filters are applied without waiting
+    // for the next CALENDAR_EVENTS broadcast (which can be many minutes away).
+    if (this._ready) {
+      this.requestRender()
+    }
+  },
+
   getScripts() {
     // Load the polyfill for browsers that don't support Intl.Locale.getWeekInfo() (e.g., Firefox)
     // TODO: Remove this polyfill when Firefox supports getWeekInfo() natively
@@ -105,20 +146,20 @@ Module.register("MMM-CalendarExt3", {
   },
 
   getMoment(options) {
-    let moment = (options.referenceDate) ? new Date(options.referenceDate) : new Date(Date.now())
-    // let moment = (this.tempMoment) ? new Date(this.tempMoment.valueOf()) : new Date()
+    let focusDate = (options.referenceDate) ? new Date(options.referenceDate) : new Date(Date.now())
+    // let focusDate = (this.tempMoment) ? new Date(this.tempMoment.valueOf()) : new Date()
     switch (options.mode) {
       case "day":
-        moment = new Date(moment.getFullYear(), moment.getMonth(), moment.getDate() + options.dayIndex)
+        focusDate = new Date(focusDate.getFullYear(), focusDate.getMonth(), focusDate.getDate() + options.dayIndex)
         break
       case "month":
-        moment = new Date(moment.getFullYear(), moment.getMonth() + options.monthIndex, 1)
+        focusDate = new Date(focusDate.getFullYear(), focusDate.getMonth() + options.monthIndex, 1)
         break
       case "week":
       default:
-        moment = new Date(moment.getFullYear(), moment.getMonth(), moment.getDate() + (7 * options.weekIndex))
+        focusDate = new Date(focusDate.getFullYear(), focusDate.getMonth(), focusDate.getDate() + (7 * options.weekIndex))
     }
-    return moment
+    return focusDate
   },
 
   regularizeConfig(options) {
@@ -140,16 +181,17 @@ Module.register("MMM-CalendarExt3", {
 
     options.instanceId = options.instanceId ?? this.identifier
     this.notifications = {
-      weatherNotification: options.weatherNotification ?? this.defaulNotifications.weatherNotification,
-      weatherPayload: (typeof options.weatherPayload === "function") ? options.weatherPayload : this.defaulNotifications.weatherPayload,
-      eventNotification: options.eventNotification ?? this.defaulNotifications.eventNotification,
-      eventPayload: (typeof options.eventPayload === "function") ? options.eventPayload : this.defaulNotifications.eventPayload
+      weatherNotification: options.weatherNotification ?? this.defaultNotifications.weatherNotification,
+      weatherPayload: (typeof options.weatherPayload === "function") ? options.weatherPayload : this.defaultNotifications.weatherPayload,
+      eventNotification: options.eventNotification ?? this.defaultNotifications.eventNotification,
+      eventPayload: (typeof options.eventPayload === "function") ? options.eventPayload : this.defaultNotifications.eventPayload
     }
 
     options.mode = (["day", "month", "week"].includes(options.mode)) ? options.mode : "week"
     options.weekIndex = (options.mode === "month") ? 0 : options.weekIndex
     options.weeksInView = (options.mode === "month") ? 6 : options.weeksInView
     options.dayIndex = (options.mode === "day") ? options.dayIndex : 0
+    options.dynamicWeekHeight = (options.dynamicWeekHeight === true)
 
     return options
   },
@@ -165,6 +207,13 @@ Module.register("MMM-CalendarExt3", {
     this.popoverTimer = null
 
     this._ready = false
+    // Safety timeout: if node_helper never responds (e.g. socket issues),
+    // resolve after 5s so the module still renders.
+    const _functionsRestored = new Promise(resolve => {
+      this._functionsReady = resolve
+      setTimeout(resolve, 5000)
+    })
+    this.sendSocketNotification("CX3_REGISTER", { identifier: this.identifier })
 
     const _moduleLoaded = new Promise((resolve, reject) => {
       import(`/${this.file("CX3_Shared/CX3_shared.mjs")}`).then(m => {
@@ -181,11 +230,11 @@ Module.register("MMM-CalendarExt3", {
       this._domReady = resolve
     })
 
-    Promise.allSettled([_moduleLoaded, _domCreated]).then(() => {
+    Promise.allSettled([_moduleLoaded, _domCreated, _functionsRestored]).then(() => {
       this._ready = true
       this.library.prepareMagic()
       setTimeout(() => {
-        this.updateAnimate()
+        this.requestRender()
       }, this.activeConfig.waitFetch)
     })
     if (popoverSupported) {
@@ -328,7 +377,8 @@ Module.register("MMM-CalendarExt3", {
 
     if (notification === this.notifications.eventNotification) {
       const convertedPayload = this.notifications.eventPayload(payload)
-      this.eventPool.set(sender.identifier, JSON.parse(JSON.stringify(convertedPayload)))
+      this.eventPool.set(sender.identifier, structuredClone(convertedPayload))
+      this.requestRender()
     }
 
     if (notification === "MODULE_DOM_CREATED") {
@@ -345,6 +395,15 @@ Module.register("MMM-CalendarExt3", {
       observer.observe(moduleContainer, { childList: true })
     }
 
+    if (notification === "NEW_PAGE") {
+      // MMM-Pages hides/shows modules via display:none, so offsetWidth/scrollWidth are 0 when hidden.
+      // Re-run updated() after a frame so measurements are correct when the page becomes visible.
+      requestAnimationFrame(() => {
+        const content = document.querySelector(`#${this.identifier} .module-content .CX3`)
+        if (content) this.updated(content, this.activeConfig)
+      })
+    }
+
     if (notification === this.notifications.weatherNotification) {
       const convertedPayload = this.notifications.weatherPayload(payload)
       if (
@@ -358,6 +417,7 @@ Module.register("MMM-CalendarExt3", {
           o.dateId = d.toLocaleDateString("en-CA")
           return o
         })
+        this.requestRender()
       } else {
         if (this.activeConfig.weatherLocationName && !convertedPayload.locationName.includes(this.activeConfig.weatherLocationName)) {
           Log.warn(`"weatherLocationName: '${this.activeConfig.weatherLocationName}'" doesn't match with location of weather module ('${convertedPayload.locationName}')`)
@@ -365,9 +425,6 @@ Module.register("MMM-CalendarExt3", {
       }
     }
 
-    if (["CX3_GLANCE_CALENDAR", "CX3_MOVE_CALENDAR", "CX3_SET_DATE"].includes(notification)) {
-      console.warn("[DEPRECATED]'CX3_GLANCE_CALENDAR' notification was deprecated. Use 'CX3_SET_CONFIG' instead. (README.md)")
-    }
     if (payload?.instanceId && payload?.instanceId !== this.activeConfig?.instanceId) return
 
     if (notification === "CX3_GET_CONFIG") {
@@ -376,13 +433,13 @@ Module.register("MMM-CalendarExt3", {
 
     if (notification === "CX3_SET_CONFIG") {
       this.activeConfig = this.regularizeConfig({ ...this.activeConfig, ...payload })
-      this.updateAnimate()
+      this.requestRender()
       replyCurrentConfig(payload)
     }
 
     if (notification === "CX3_RESET") {
       this.activeConfig = this.regularizeConfig({ ...this.originalConfig })
-      this.updateAnimate()
+      this.requestRender()
       replyCurrentConfig(payload)
     }
   },
@@ -392,7 +449,7 @@ Module.register("MMM-CalendarExt3", {
     dom.innerHTML = ""
     dom.classList.add("bodice", `CX3_${this.activeConfig.instanceId}`, "CX3")
     if (this.activeConfig.fontSize) dom.style.setProperty("--fontsize", this.activeConfig.fontSize)
-    if (!this.library?.loaded) {
+    if (!this.library?.loaded || !this._ready) {
       Log.warn("[CX3] Module is not prepared yet, wait a while.")
       return dom
     }
@@ -405,7 +462,7 @@ Module.register("MMM-CalendarExt3", {
     this.refreshTimer = setTimeout(() => {
       clearTimeout(this.refreshTimer)
       this.refreshTimer = null
-      this.updateAnimate()
+      this.requestRender()
     }, this.activeConfig.refreshInterval)
     this.sendNotification("CX3_DOM_UPDATED", { instanceId: this.activeConfig.instanceId })
     return dom
@@ -431,7 +488,7 @@ Module.register("MMM-CalendarExt3", {
     })
   },
 
-  async draw(dom, options) {
+  draw(dom, options) {
     if (!this.library?.loaded) return dom
     const {
       isToday, isPastDay, isFutureDay, isThisMonth, isThisYear, getWeekNo, renderEventAgenda,
@@ -528,22 +585,22 @@ Module.register("MMM-CalendarExt3", {
       return cell
     }
 
-    const rangeCalendar = (moment, options) => {
+    const rangeCalendar = (focusDate, options) => {
       let boc, eoc
       switch (options.mode) {
         case "day":
-          boc = new Date(moment.getFullYear(), moment.getMonth(), moment.getDate())
+          boc = new Date(focusDate.getFullYear(), focusDate.getMonth(), focusDate.getDate())
           eoc = new Date(boc.valueOf())
           eoc.setDate(boc.getDate() + 7 * options.weeksInView)
           eoc.setMilliseconds(-1)
           break
         case "month":
-          boc = getBeginOfWeek(new Date(moment.getFullYear(), moment.getMonth(), 1), options)
-          eoc = getEndOfWeek(new Date(moment.getFullYear(), moment.getMonth() + 1, 0), options)
+          boc = getBeginOfWeek(new Date(focusDate.getFullYear(), focusDate.getMonth(), 1), options)
+          eoc = getEndOfWeek(new Date(focusDate.getFullYear(), focusDate.getMonth() + 1, 0), options)
           break
         case "week":
         default:
-          boc = getBeginOfWeek(new Date(moment.getFullYear(), moment.getMonth(), moment.getDate()), options)
+          boc = getBeginOfWeek(new Date(focusDate.getFullYear(), focusDate.getMonth(), focusDate.getDate()), options)
           eoc = getEndOfWeek(new Date(boc.getFullYear(), boc.getMonth(), boc.getDate() + (7 * (options.weeksInView - 1))), options)
           break
       }
@@ -556,13 +613,14 @@ Module.register("MMM-CalendarExt3", {
       dayDom.classList.add("headerContainer", "weekGrid")
       for (let i = 0; i < 7; i++) {
         const dm = new Date(wm.getFullYear(), wm.getMonth(), wm.getDate() + i)
-        const day = (dm.getDay() + 7) % 7
+        const day = dm.getDay()
         const dDom = document.createElement("div")
         dDom.classList.add("weekday", `weekday_${day}`)
-        options.weekends.forEach((w, i) => {
-          if (day === w) dDom.classList.add("weekend", `weekend_${i + 1}`)
+        options.weekends.forEach((w, idx) => {
+          if (day === w) dDom.classList.add("weekend", `weekend_${idx + 1}`)
         })
-        dDom.innerHTML = new Intl.DateTimeFormat(options.locale, options.headerWeekDayOptions).format(dm)
+        const headerText = new Intl.DateTimeFormat(options.locale, options.headerWeekDayOptions).format(dm)
+        dDom.innerHTML = headerText
         dayDom.append(dDom)
       }
 
@@ -620,58 +678,113 @@ Module.register("MMM-CalendarExt3", {
 
         const boundary = []
 
-        let cm = new Date(wm.valueOf())
         for (let i = 0; i < 7; i++) {
-          if (i) cm = new Date(cm.getFullYear(), cm.getMonth(), cm.getDate() + 1)
+          const cm = new Date(wm.getFullYear(), wm.getMonth(), wm.getDate() + i)
           ccDom.append(makeCellDom(cm, i))
           boundary.push(cm.getTime())
         }
-        boundary.push(cm.setHours(23, 59, 59, 999))
+        const lastDay = new Date(wm.getFullYear(), wm.getMonth(), wm.getDate() + 6, 23, 59, 59, 999)
+        boundary.push(lastDay.getTime())
 
         const sw = new Date(wm.valueOf())
         const ew = new Date(sw.getFullYear(), sw.getMonth(), sw.getDate() + 6, 23, 59, 59, 999)
         const eventsOfWeek = events.filter(ev => {
           return !(ev.endDate <= sw.getTime() || ev.startDate >= ew.getTime())
         })
-        for (const event of eventsOfWeek) {
-          if (options.skipPassedEventToday) {
-            if (event.today && event.isPassed && !event.isFullday && !event.isMultiday && !event.isCurrent) event.skip = true
+
+        // Packing algorithm: assign explicit row to each event
+        const assignEventRows = eventList => {
+          // Track which rows are occupied per day (0-6)
+          const rowsPerDay = Array(7).fill(null).map(() => new Set())
+
+          // Calculate start/end column for each event
+          const eventsWithColumns = eventList.map(event => {
+            let startCol = 0
+            if (event.startDate >= boundary.at(0)) {
+              startCol = boundary.findIndex((b, idx, bounds) => {
+                return (event.startDate >= b && event.startDate < bounds[idx + 1])
+              })
+            }
+
+            // Find the last day (0-6) the event is still running
+            const weekDays = boundary.slice(0, 7) // Days 0-6 (7 weekdays), exclude boundary[7] (week end marker)
+            const lastDayIndex = weekDays.findLastIndex(b => event.endDate > b)
+            const endCol = lastDayIndex >= 0 ? lastDayIndex : 6
+
+            const days = []
+            for (let d = startCol; d <= endCol; d++) days.push(d)
+            return { event, startCol, endCol, days, span: endCol - startCol + 1 }
+          })
+
+          // Sort: longer (multi-day) events first, then by start date
+          eventsWithColumns.sort((a, b) => {
+            return b.span - a.span || a.event.startDate - b.event.startDate
+          })
+
+          // Assign rows
+          for (const ev of eventsWithColumns) {
+            let row = 1
+            while (true) {
+              const isFree = ev.days.every(day => !rowsPerDay[day].has(row))
+              if (isFree) break
+              row++
+            }
+            ev.assignedRow = row
+            ev.days.forEach(day => rowsPerDay[day].add(row))
           }
-          if (event?.skip) continue
 
-          const eDom = renderEventAgenda(event, options, moment)
+          return eventsWithColumns
+        }
 
-          let startLine = 0
-          if (event.startDate >= boundary.at(0)) {
-            startLine = boundary.findIndex((b, idx, bounds) => {
-              return (event.startDate >= b && event.startDate < bounds[idx + 1])
-            })
-          } else {
+        // Filter skipped events and assign rows
+        const activeEvents = eventsOfWeek.filter(event => {
+          if (options.skipPassedEventToday) {
+            if (event.today && event.isPassed && !event.isFullday && !event.isMultiday && !event.isCurrent) {
+              event.skip = true
+            }
+          }
+          return !event?.skip
+        })
+
+        const packedEvents = assignEventRows(activeEvents)
+        const usedEventLines = packedEvents.reduce((max, packed) => {
+          return (packed.assignedRow > max) ? packed.assignedRow : max
+        }, 0)
+        const weekEventLines = options.dynamicWeekHeight ? Math.min(maxEventLines, usedEventLines) : maxEventLines
+        wDom.style.setProperty("--weekeventlines", weekEventLines)
+        wDom.dataset.weekEventLines = weekEventLines
+
+        // Track hidden events per day for "+N" display
+        const hiddenPerDay = Array(7).fill(0)
+
+        for (const packed of packedEvents) {
+          const { event, startCol, endCol, assignedRow } = packed
+          const eDom = renderEventAgenda(event, options, focusDate)
+
+          // Set grid position explicitly
+          eDom.style.gridColumnStart = startCol + 1
+          eDom.style.gridColumnEnd = endCol + 2
+          eDom.style.gridRowStart = assignedRow
+
+          if (event.startDate < boundary.at(0)) {
             eDom.classList.add("continueFromPreviousWeek")
           }
-
-          let endLine = boundary.length - 1
-          if (event.endDate <= boundary.at(-1)) {
-            endLine = boundary.findIndex((b, idx, bounds) => {
-              return (event.endDate <= b && event.endDate > bounds[idx - 1])
-            })
-          } else {
+          if (event.endDate > boundary.at(-1)) {
             eDom.classList.add("continueToNextWeek")
           }
 
-          eDom.style.gridColumnStart = startLine + 1
-          eDom.style.gridColumnEnd = endLine + 1
+          // Hide events beyond maxEventLines
+          if (assignedRow > maxEventLines) {
+            eDom.style.display = "none"
+            packed.days.forEach(day => hiddenPerDay[day]++)
+          }
 
           if (event?.noMarquee) {
             eDom.dataset.noMarquee = true
           }
 
-          if (event?.skip) {
-            eDom.dataset.skip = true
-          }
-
           if (popoverSupported) {
-            if (!eDom.id) eDom.id = `${eDom.dataset.calendarSeq}_${eDom.dataset.startDate}_${eDom.dataset.endDate}_${new Date(Date.now()).getTime()}`
+            if (!eDom.id) eDom.id = `${this.identifier}_ev_${eDom.dataset.calendarSeq}_${eDom.dataset.startDate}_${eDom.dataset.endDate}`
             eDom.dataset.popoverble = true
             eDom.onclick = () => {
               this.eventPopover(eDom, options)
@@ -696,10 +809,8 @@ Module.register("MMM-CalendarExt3", {
           }
 
           if (options.showMore) {
-            const skipped = thatDayEvents.filter(ev => ev.skip).length
-            const noskip = thatDayEvents.length - skipped
-            const noskipButOverflowed = (noskip > maxEventLines) ? noskip - maxEventLines : 0
-            const hidden = skipped + noskipButOverflowed
+            // showMore reflects only overflowed events hidden by maxEventLines.
+            const hidden = hiddenPerDay[i]
             if (hidden) {
               dateCell.classList.add("hasMore")
               dateCell.style.setProperty("--more", hidden)
@@ -707,7 +818,7 @@ Module.register("MMM-CalendarExt3", {
           }
 
           if (popoverSupported) {
-            if (!dateCell.id) dateCell.id = `${dateCell.dataset.date}_${new Date(Date.now()).getTime()}`
+            if (!dateCell.id) dateCell.id = `${this.identifier}_dc_${dateCell.dataset.date}`
             dateCell.dataset.popoverble = true
             dateCell.onclick = () => {
               this.dayPopover(dateCell, thatDayEvents, options)
@@ -729,9 +840,9 @@ Module.register("MMM-CalendarExt3", {
           const locale = options.locale
           const titleOptions = options.headerTitleOptions
           if (options.mode === "month") {
-            const moment = this.getMoment(options)
+            const focusDate = this.getMoment(options)
             return new Intl.DateTimeFormat(locale, titleOptions)
-              .formatToParts(new Date(moment.valueOf()))
+              .formatToParts(new Date(focusDate.valueOf()))
               .reduce((prev, cur, curIndex) => {
                 const result = `${prev}<span class="headerTimeParts ${cur.type} seq_${curIndex} ${cur.source}">${cur.value}</span>`
                 return result
@@ -757,8 +868,8 @@ Module.register("MMM-CalendarExt3", {
       dom.prepend(header)
     }
 
-    const moment = this.getMoment(options)
-    const { boc, eoc } = rangeCalendar(moment, options)
+    const focusDate = this.getMoment(options)
+    const { boc, eoc } = rangeCalendar(focusDate, options)
     dom.dataset.beginOfCalendar = boc.valueOf()
     dom.dataset.endOfCalendar = eoc.valueOf()
     const targetEvents = prepareEvents({
@@ -779,10 +890,10 @@ Module.register("MMM-CalendarExt3", {
   getHeader() {
     if (this.data.header && this.data.header.trim() !== "") return this.data.header
     if (!this.activeConfig.customHeader && this.activeConfig.mode === "month") {
-      const moment = this.getMoment(this.activeConfig)
+      const focusDate = this.getMoment(this.activeConfig)
       const locale = this.activeConfig.locale
       const titleOptions = this.activeConfig.headerTitleOptions
-      return new Intl.DateTimeFormat(locale, titleOptions).format(new Date(moment.valueOf()))
+      return new Intl.DateTimeFormat(locale, titleOptions).format(new Date(focusDate.valueOf()))
     }
     return this.data.header
   },
@@ -801,5 +912,14 @@ Module.register("MMM-CalendarExt3", {
           }
         }
     )
+  },
+
+  requestRender() {
+    if (this.renderPending) return
+    this.renderPending = true
+    queueMicrotask(() => {
+      this.renderPending = false
+      if (this._ready) this.updateAnimate()
+    })
   }
 })
