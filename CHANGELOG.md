@@ -1,9 +1,240 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [2.0.5](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v2.0.4...v2.0.5) (2026-07-31)
+
+### Fixed
+
+* update calendar on event notifications ([#266](https://github.com/MMRIZE/MMM-CalendarExt3/issues/266)) ([1f24619](https://github.com/MMRIZE/MMM-CalendarExt3/commit/1f246192419868f253822fbd35567a81276b18f1))
+
+### Chores
+
+* update devDependencies ([ec8919b](https://github.com/MMRIZE/MMM-CalendarExt3/commit/ec8919bcf8c7d019ec9632bd9eca4aa15d5e3548))
+* update subproject commit reference ([a8fab65](https://github.com/MMRIZE/MMM-CalendarExt3/commit/a8fab65967a29d3a4bd49f088954d05b00c2498c))
+
+### Code Refactoring
+
+* remove unnecessary async from draw ([f5cd83b](https://github.com/MMRIZE/MMM-CalendarExt3/commit/f5cd83b77a6a6193a9de15bec20613d350d3f485))
+* **render:** centralize update scheduling ([ced5233](https://github.com/MMRIZE/MMM-CalendarExt3/commit/ced5233cccc6524ee7b669d556bd7143ff8d470d))
+
+### Tests
+
+* cover weather-triggered rendering ([0df5a4b](https://github.com/MMRIZE/MMM-CalendarExt3/commit/0df5a4b1efb41cbbe3c37f6e8ce5bfb07aa9bc51))
+## [2.0.4](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v2.0.3...v2.0.4) (2026-07-05)
+
+
+### Chores
+
+* update checkout action ([1677c5d](https://github.com/MMRIZE/MMM-CalendarExt3/commit/1677c5d5f1d6509d384fcd276f5ce675c0b18572))
+* update CX3_Shared ([6e25797](https://github.com/MMRIZE/MMM-CalendarExt3/commit/6e257976b89f951f1c180e608f01c6c3cba6cc5b))
+* update devDependencies ([2da949e](https://github.com/MMRIZE/MMM-CalendarExt3/commit/2da949e8c217a499d1d018ffccf7771611220d57))
+
+
+### Code Refactoring
+
+* rename moment variables to focusDate ([2c6a70a](https://github.com/MMRIZE/MMM-CalendarExt3/commit/2c6a70a9af095a140e271edc695e72fa0e70cf82))
+
+
+### Tests
+
+* cover closure scope restore ([6edff69](https://github.com/MMRIZE/MMM-CalendarExt3/commit/6edff694a59c490ae212290e28c708bd3cb5fc51))
+
+## [2.0.3](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v2.0.2...v2.0.3) (2026-05-03)
+
+
+### Fixed
+
+* **closure:** add preProcessor to serialized function keys ([bc5ae47](https://github.com/MMRIZE/MMM-CalendarExt3/commit/bc5ae47e811a3c4d70782faaed2e25f4c8c0efeb)), closes [#261](https://github.com/MMRIZE/MMM-CalendarExt3/issues/261)
+* **closure:** guard getDom against early render before functions restored ([d4e3cdd](https://github.com/MMRIZE/MMM-CalendarExt3/commit/d4e3cddab7c57368755e982b7424c114cdfafa81))
+
+
+### Documentation
+
+* **readme:** document rolling-days use case for day mode ([2908b61](https://github.com/MMRIZE/MMM-CalendarExt3/commit/2908b61a7caa8d3d824b06cc04d24618e22c59c3))
+
+
+### Tests
+
+* add contract test for all socketNotificationReceived config keys ([a3cf3a4](https://github.com/MMRIZE/MMM-CalendarExt3/commit/a3cf3a4532e17c99ddcfb42b9121676f191cd3af))
+* add regression test for getDom early-render guard ([7231303](https://github.com/MMRIZE/MMM-CalendarExt3/commit/72313038a6c52eedd8c756195c96a8ecb5d7a7f1))
+
+## [2.0.2](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v2.0.1...v2.0.2) (2026-05-01)
+
+
+### Fixed
+
+* **closure:** restore _functionsReady gating in startup ([eea9834](https://github.com/MMRIZE/MMM-CalendarExt3/commit/eea98348bd2fcd6a420cb15b763b677c44066b8f))
+
+
+### Chores
+
+* update devDependencies ([78b8393](https://github.com/MMRIZE/MMM-CalendarExt3/commit/78b839332202532762c5e62238c4e9d828bd1aa3))
+
+## [2.0.1](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v2.0.0...v2.0.1) (2026-05-01)
+
+
+### Fixed
+
+* **closure:** restore closure variable support in config callbacks ([0ff1628](https://github.com/MMRIZE/MMM-CalendarExt3/commit/0ff1628ec60e770a864ea95be67cf7c6212c0a77)), closes [#261](https://github.com/MMRIZE/MMM-CalendarExt3/issues/261)
+
+## [2.0.0](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v1.12.5...v2.0.0) (2026-05-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* requires MagicMirror² ≥ 2.36.0
+
+### Chores
+
+* update devDependencies ([a024241](https://github.com/MMRIZE/MMM-CalendarExt3/commit/a02424147f8d43069322e0760897a63936f93214))
+
+
+### Code Refactoring
+
+* remove workaround for MM v2.35.0 function-stripping bug ([925e811](https://github.com/MMRIZE/MMM-CalendarExt3/commit/925e811e6b6e2be8629c4b5689c550ec831216f7)), closes [MagicMirrorOrg/MagicMirror#4106](https://github.com/MagicMirrorOrg/MagicMirror/issues/4106)
+
+## [1.12.5](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v1.12.4...v1.12.5) (2026-04-28)
+
+
+### Fixed
+
+* **node_helper:** send correct functions on reconnect ([9dea2c4](https://github.com/MMRIZE/MMM-CalendarExt3/commit/9dea2c444c0cc0b492af6bc66d8d8cdfc9553019)), closes [#261](https://github.com/MMRIZE/MMM-CalendarExt3/issues/261)
+
+## [1.12.4](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v1.12.3...v1.12.4) (2026-04-26)
+
+
+### Fixed
+
+* re-render immediately after function restoration ([e3841db](https://github.com/MMRIZE/MMM-CalendarExt3/commit/e3841dbd14afb519211dafdd274616c9e3e22356)), closes [#261](https://github.com/MMRIZE/MMM-CalendarExt3/issues/261)
+
+## [1.12.3](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v1.12.2...v1.12.3) (2026-04-26)
+
+
+### Fixed
+
+* **closure:** restore closure context in config callbacks ([ac801a5](https://github.com/MMRIZE/MMM-CalendarExt3/commit/ac801a5b95a7a4ef72068221e08540fccf4ddbcc)), closes [#260](https://github.com/MMRIZE/MMM-CalendarExt3/issues/260)
+
+## [1.12.2](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v1.12.1...v1.12.2) (2026-04-20)
+
+
+### Fixed
+
+* **showMore:** exclude skipped events from count ([577a0f4](https://github.com/MMRIZE/MMM-CalendarExt3/commit/577a0f42a06fc530c2cfc1c85bce5999d1df0866)), closes [#259](https://github.com/MMRIZE/MMM-CalendarExt3/issues/259)
+
+
+### Chores
+
+* update devDependencies ([68b5ae1](https://github.com/MMRIZE/MMM-CalendarExt3/commit/68b5ae1766a0e058e3cf83e280adf2638832bd8f))
+
+## [1.12.1](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v1.12.0...v1.12.1) (2026-04-04)
+
+
+### Fixed
+
+* restore callback functions lost after MM v2.35.0 ([19a96c0](https://github.com/MMRIZE/MMM-CalendarExt3/commit/19a96c0c43c60b0b0b7103cb75c947307ae3cbc1)), closes [#257](https://github.com/MMRIZE/MMM-CalendarExt3/issues/257)
+
+
+### Chores
+
+* update devDependencies ([e9710e6](https://github.com/MMRIZE/MMM-CalendarExt3/commit/e9710e6c83185e01c1a4beb8a0b292a2f32017f5))
+
+## [1.12.0](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v1.11.4...v1.12.0) (2026-03-25)
+
+
+### Added
+
+* add opt-in dynamic week height for event rows ([ab7d730](https://github.com/MMRIZE/MMM-CalendarExt3/commit/ab7d730b3c2601cd77032d23fa2f079ca7da0115))
+
+
+### Chores
+
+* update devDependencies ([8451859](https://github.com/MMRIZE/MMM-CalendarExt3/commit/8451859ab311305067aabc7aa2bee453a0a01f00))
+
+## [1.11.4](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v1.11.3...v1.11.4) (2026-02-22)
+
+
+### Fixed
+
+* re-apply marquee on NEW_PAGE notification from MMM-Pages ([8c0619a](https://github.com/MMRIZE/MMM-CalendarExt3/commit/8c0619a9180fa929e0681ad33a264d1a538347dd))
+
+
+### Documentation
+
+* clarify description of showWeekNumber configuration option ([90eadc7](https://github.com/MMRIZE/MMM-CalendarExt3/commit/90eadc7e8a3bc0a9e5ece888114247ddc72aa773))
+
+
+### Chores
+
+* update devDependencies ([b4243f1](https://github.com/MMRIZE/MMM-CalendarExt3/commit/b4243f1b7ed1f901bc77c6357f818b51f57d5567))
+
+## [1.11.3](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v1.11.2...v1.11.3) (2026-02-14)
+
+
+### Fixed
+
+* correct typo in defaultNotifications object ([90c3692](https://github.com/MMRIZE/MMM-CalendarExt3/commit/90c3692d5ab8ebca79f26f5097879aa4bc49a3f2))
+
+
+### Documentation
+
+* align README defaults with actual module config ([1d08119](https://github.com/MMRIZE/MMM-CalendarExt3/commit/1d08119ea672c4ac0723c13ccf712724bfcd8fb8))
+
+
+### Chores
+
+* add automated testing workflow ([bbe48fd](https://github.com/MMRIZE/MMM-CalendarExt3/commit/bbe48fd3a94c8c7f50b34ebadb4d018b8daf79e3))
+* remove deprecated notifications (CX3_SET_DATE, CX3_MOVE_CALENDAR, CX3_GLANCE_CALENDAR) ([070961c](https://github.com/MMRIZE/MMM-CalendarExt3/commit/070961cb0e40a66504e5ab737991ffdf0a847245))
+* reorder test script to run lint before unit tests ([fead5d1](https://github.com/MMRIZE/MMM-CalendarExt3/commit/fead5d1bb38b5bf7b72afad03188a02a976a527d))
+* update devDependencies + ESLint config ([11510d9](https://github.com/MMRIZE/MMM-CalendarExt3/commit/11510d980a6681c601ced4a295c0d2e3b6ff0b3b))
+* update subproject commit reference in CX3_Shared ([fc863de](https://github.com/MMRIZE/MMM-CalendarExt3/commit/fc863de6d29b362b0036a25f0429876edc0805c5))
+
+
+### Code Refactoring
+
+* remove unused function parameters in event handling ([a667d2f](https://github.com/MMRIZE/MMM-CalendarExt3/commit/a667d2f648c8f2b345465f6b56db4a0f3d745c47))
+* simplify event payload cloning with structuredClone ([5295dd6](https://github.com/MMRIZE/MMM-CalendarExt3/commit/5295dd62f11bea5192c650189b966cdf08e2ba54))
+* use deterministic DOM IDs instead of timestamps ([5611e77](https://github.com/MMRIZE/MMM-CalendarExt3/commit/5611e77b8370269a9012eb5c0c3e5d1593e2a073))
+
+
+### Tests
+
+* add unit tests ([4edbcfe](https://github.com/MMRIZE/MMM-CalendarExt3/commit/4edbcfe9bc5af9f8a2ebec5853ae0c9b4829dc7c))
+
+## [1.11.2](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v1.11.1...v1.11.2) (2026-01-26)
+
+
+### Performance Improvements
+
+* optimize marquee animation performance ([d6ea9b3](https://github.com/MMRIZE/MMM-CalendarExt3/commit/d6ea9b3a15de3a91cf0c4d2c363f109bbda460ae))
+
+
+### Chores
+
+* update CX3_Shared submodule to latest version ([1660433](https://github.com/MMRIZE/MMM-CalendarExt3/commit/1660433e0f74ea7e35f7483ce3a975b7c6f61e81))
+* update devDependencies ([bd929e8](https://github.com/MMRIZE/MMM-CalendarExt3/commit/bd929e8ec2e165f2e24060625bc91c01bb206bbe))
+* update devDependencies ([6e5f31f](https://github.com/MMRIZE/MMM-CalendarExt3/commit/6e5f31fe5c276d015ccb75a5eb5a32a1211fbf52))
+
+## [1.11.1](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v1.11.0...v1.11.1) (2026-01-04)
+
+
+### Fixed
+
+* ensure consistent maxEventLines behavior across all days ([#248](https://github.com/MMRIZE/MMM-CalendarExt3/issues/248)) ([6095abb](https://github.com/MMRIZE/MMM-CalendarExt3/commit/6095abb932adcb67b01496bc10288618d2777bb8)), closes [#226](https://github.com/MMRIZE/MMM-CalendarExt3/issues/226)
+
+
+### Chores
+
+* add demo config and script ([fbca66d](https://github.com/MMRIZE/MMM-CalendarExt3/commit/fbca66dc521e8ae8fb9a502b4c8f532d897962a8))
+* add global ignores for CX3_Shared in ESLint config ([eb3b40f](https://github.com/MMRIZE/MMM-CalendarExt3/commit/eb3b40f6cc0fde2b64d1bf8e4c43290059a107b9))
+* add release script ([aa181b7](https://github.com/MMRIZE/MMM-CalendarExt3/commit/aa181b7438a90932db2e0d3eff5cd3db0760fdee))
+* update devDependencies ([56bc727](https://github.com/MMRIZE/MMM-CalendarExt3/commit/56bc72702d0080861a26a4a48727fdc7c119dcbf))
+
+
+### Code Refactoring
+
+* improve date calculation clarity in calendar grid ([8ef7846](https://github.com/MMRIZE/MMM-CalendarExt3/commit/8ef7846301554c43f2a58888e507672929c67009))
+* simplify end column calculation for event display ([a9cc827](https://github.com/MMRIZE/MMM-CalendarExt3/commit/a9cc827ace536cb8817f04590a12cd1f87d3b34d))
 
 ## [1.11.0](https://github.com/MMRIZE/MMM-CalendarExt3/compare/v1.10.2...v1.11.0) - 2025-11-28
 
